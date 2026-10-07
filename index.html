@@ -1,4 +1,11 @@
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendrier Grist</title>
+    <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+    <style>
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #ffffff; }
     .en-tete { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .grille { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
@@ -9,7 +16,9 @@
     .titre-jour { font-weight: bold; margin-bottom: 10px; color: #333; }
     .raccourci { color: #d32f2f; font-weight: bold; font-size: 1.2em; margin-bottom: 5px; }
 </style>
-<div class="en-tete">
+</head>
+<body>
+    <div class="en-tete">
     <h2 id="titre-mois">Chargement du calendrier...</h2>
 </div>
 
@@ -29,11 +38,11 @@
             
             // 3. Organiser les raccourcis
             const raccourcis = [];
-            for (let i = 0; i < raccourcisData.id.length; i++) {
+            for (let i = 0; i < raccourcisData.length; i++) {
                 raccourcis.push({
-                    id: raccourcisData.id[i],
-                    Combinaison: raccourcisData.Combinaison[i],
-                    Description: raccourcisData.Description[i]
+                    id: raccourcisData[i].id,
+                    Combinaison: raccourcisData[i].Combinaison,
+                    Description: raccourcisData[i].Description
                 });
             }
 
@@ -96,6 +105,7 @@
             document.getElementById('grille-calendrier').innerHTML = "<p>Erreur de lecture. Vérifiez les accès.</p>";
         }
     }
-
-    chargerCalendrier();
+  chargerCalendrier();
+    </body>
+   </html>
 </script>
