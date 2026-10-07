@@ -1,0 +1,101 @@
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #ffffff; }
+    .en-tete { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .grille { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
+    .case-jour { 
+        border: 1px solid #e0e0e0; padding: 15px; border-radius: 8px; 
+        text-align: center; min-height: 100px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+    }
+    .titre-jour { font-weight: bold; margin-bottom: 10px; color: #333; }
+    .raccourci { color: #d32f2f; font-weight: bold; font-size: 1.2em; margin-bottom: 5px; }
+</style>
+<div class="en-tete">
+    <h2 id="titre-mois">Chargement du calendrier...</h2>
+</div>
+
+<div class="grille" id="grille-calendrier">
+    <!-- Les cases seront générées ici par le script -->
+</div>
+
+<script>
+    // 1. Initialisation stricte en LECTURE SEULE
+    grist.ready({ requiredAccess: 'read table' });
+
+    async function chargerCalendrier() {
+        try {
+            // 2. Récupération des tables
+            const planningData = await grist.docApi.fetchTable('PlannigDiffusion');
+            const raccourcisData = await grist.docApi.fetchTable('Raccourcis');
+            
+            // 3. Organiser les raccourcis
+            const raccourcis = [];
+            for (let i = 0; i < raccourcisData.id.length; i++) {
+                raccourcis.push({
+                    id: raccourcisData.id[i],
+                    Combinaison: raccourcisData.Combinaison[i],
+                    Description: raccourcisData.Description[i]
+                });
+            }
+
+            // 4. Gérer les dates
+            const aujourdhui = new Date();
+            aujourdhui.setHours(0,0,0,0);
+            const moisActuel = aujourdhui.getMonth(); 
+            const anneeActuelle = aujourdhui.getFullYear();
+            
+            const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+            document.getElementById('titre-mois').innerText = moisNoms[moisActuel] + " " + anneeActuelle;
+
+            const conteneurGrille = document.getElementById('grille-calendrier');
+            conteneurGrille.innerHTML = ""; 
+
+            const joursSemaine = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
+            // 5. Boucler sur le planning pour créer les cases
+            for (let i = 0; i < planningData.id.length; i++) {
+                let timestamp = planningData.Date_Diffusion[i];
+                if (typeof timestamp === 'number') timestamp = timestamp * 1000; 
+                else timestamp = new Date(timestamp).getTime();
+                
+                const datePlanifiee = new Date(timestamp);
+                datePlanifiee.setHours(0,0,0,0);
+
+                // Si on est dans le bon mois
+                if (datePlanifiee.getMonth() === moisActuel && datePlanifiee.getFullYear() === anneeActuelle) {
+                    
+                    const raccourciId = planningData.Raccourci_Cible[i];
+                    const raccourciCible = raccourcis.find(r => r.id === raccourciId);
+                    
+                    const caseDiv = document.createElement('div');
+                    caseDiv.className = 'case-jour';
+                    const jourTexte = joursSemaine[datePlanifiee.getDay()] + " " + datePlanifiee.getDate();
+                    caseDiv.innerHTML = `<div class="titre-jour">${jourTexte}</div>`;
+
+                    // Logique visuelle
+                    if (datePlanifiee > aujourdhui) {
+                        caseDiv.style.backgroundColor = "#f0f0f0";
+                        caseDiv.innerHTML += `<div class="raccourci">🔒</div><div style="font-size: 0.9em; color: #aaa;">À venir</div>`;
+                    } else {
+                        if (datePlanifiee.getTime() === aujourdhui.getTime()) {
+                            caseDiv.style.backgroundColor = "#e3f2fd";
+                            caseDiv.style.border = "2px solid #2196f3"; 
+                        } else {
+                            caseDiv.style.backgroundColor = "#fafafa"; 
+                        }
+
+                        if (raccourciCible) {
+                            caseDiv.innerHTML += `<div class="raccourci">${raccourciCible.Combinaison}</div>
+                                                  <div style="font-size: 0.9em; color: #666;">${raccourciCible.Description}</div>`;
+                        }
+                    }
+                    conteneurGrille.appendChild(caseDiv);
+                }
+            }
+        } catch (error) {
+            console.error("Erreur :", error);
+            document.getElementById('grille-calendrier').innerHTML = "<p>Erreur de lecture. Vérifiez les accès.</p>";
+        }
+    }
+
+    chargerCalendrier();
+</script>
